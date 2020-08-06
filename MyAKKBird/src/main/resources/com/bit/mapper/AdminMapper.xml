@@ -1,0 +1,404 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bit.mapper.AdminMapper">
+	
+	<resultMap type="MasterVO" id="masterResultMap">
+		<result property="m_id" column="m_id"/>
+		<result property="m_password" column="m_password"/>
+		<result property="m_photo" column="m_photo"/>
+		<result property="m_name" column="m_name"/>
+		<result property="m_age" column="m_age"/>
+		<result property="m_gender" column="m_gender"/>
+		<result property="m_address_road" column="m_address_road"/>
+		<result property="m_address_detail" column="m_address_detail"/>
+		<result property="m_email" column="m_email"/>
+		<result property="m_phone" column="m_phone"/>
+		<result property="m_category" column="m_category"/>
+		<result property="m_type" column="m_type"/>
+		<result property="m_heart" column="m_heart"/>
+		<result property="m_status" column="m_status"/>
+	</resultMap>
+	
+	<resultMap type="FAQVO" id="faqResultMap">
+		<result property="f_num" column="f_num"/>
+		<result property="f_sub" column="f_sub"/>
+		<result property="f_content" column="f_content"/>
+		<result property="f_date" column="f_date"/>
+		<result property="f_readcount" column="f_readcount"/>
+	</resultMap>
+	
+	<resultMap type="MasterVO" id="matchResultMap">
+		<result property="c_id" column="c_id"/>
+		<result property="e_id" column="e_id"/>
+		<result property="b_subject" column="b_subject"/>
+		<result property="b_apply" column="b_apply"/>
+		<result property="b_date" column="b_date"/>
+		<result property="page" column="page"/>
+		<result property="limit" column="limit"/>
+	</resultMap>
+	
+	<resultMap type="MasterVO" id="dangerResultMap">
+		<result property="d_num" column="d_num"/>
+		<result property="b_num" column="b_num"/>
+		<result property="c_num" column="c_num"/>
+		<result property="d_date" column="d_date"/>
+		<result property="m_id" column="m_id"/>
+		<result property="d_id" column="d_id"/>
+		<result property="d_con" column="d_con"/>
+		<result property="d_status" column="d_status"/>
+		<result property="d_s_date" column="d_s_date"/>
+		<result property="d_type" column="d_type"/>
+		<result property="page" column="page"/>
+		<result property="limit" column="limit"/>
+	</resultMap>
+	
+	<!-- 회원관리, FAQ -->
+	<select id="adminProfile" parameterType="MasterVO" resultMap="masterResultMap">
+		SELECT * FROM MEMBER
+		WHERE m_id = #{m_id}
+		AND m_type = 'M'
+	</select>
+	
+	<select id="memberCount" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE NOT m_type = 'M'
+		<if test="searchFiled != null and searchFiled != ''">
+	    	AND ${searchFiled} like '%'||#{searchValue}||'%'
+	    </if>
+	    <if test='m_statusValue == "Y"'>
+			AND ${m_statusFiled} = #{m_statusValue}
+     	</if>
+    	<if test='m_statusValue == "N"'>
+     		AND ${m_statusFiled} = #{m_statusValue}
+     	</if>
+     	<if test='m_typeValue == "C"'>
+			AND ${m_typeFiled} = #{m_typeValue}
+     	</if>
+    	<if test='m_typeValue == "E"'>
+     		AND ${m_typeFiled} = #{m_typeValue}
+     	</if>
+	</select>
+	
+	<select id="memberList" parameterType="MasterVO" resultMap="masterResultMap">
+	    SELECT A.*
+        FROM (SELECT ROWNUM AS RNUM1, AA.*
+            FROM (SELECT * FROM MEMBER
+            	  WHERE NOT m_type = 'M'
+				 <if test="searchFiled != null and searchFiled != ''">
+			     	AND ${searchFiled} like '%'||#{searchValue}||'%'
+			     </if>
+			     <if test='m_statusValue == "Y"'>
+			     	AND ${m_statusFiled} = #{m_statusValue}
+			     </if>
+			     <if test='m_statusValue == "N"'>
+			     	AND ${m_statusFiled} = #{m_statusValue}
+			     </if>
+			     <if test='m_typeValue == "C"'>
+					AND ${m_typeFiled} = #{m_typeValue}
+     			</if>
+    			<if test='m_typeValue == "E"'>
+     				AND ${m_typeFiled} = #{m_typeValue}
+     			</if>
+		         ORDER BY m_name DESC
+                  ) AA ) A
+        <![CDATA[           
+        WHERE RNUM1 >= #{startRowNo}
+        AND RNUM1 <= #{endRowNo}
+        ]]>
+	</select>
+	
+	<select id="typeCCount" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE m_type = 'C'
+	</select>
+	
+	<select id="typeECount" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE m_type = 'E'
+	</select>
+	
+	<select id="statusNCount" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE m_status = 'N'
+		AND NOT m_type = 'M'
+	</select>
+	
+	<select id="statusYCount" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE m_status = 'Y'
+		AND NOT m_type = 'M'
+	</select>
+	
+	<select id="topAddr" parameterType="MasterVO" resultMap="masterResultMap">
+		SELECT m_address_road, COUNT(*), COUNT(*) / SUM (COUNT(*)) OVER() * 100
+		FROM MEMBER
+		GROUP BY m_address_road 
+		ORDER BY COUNT(*) DESC
+	</select>
+	
+	<select id="detailMember" parameterType="MasterVO" resultMap="masterResultMap">
+		SELECT * FROM MEMBER
+		WHERE m_id = #{m_id}
+	</select>
+	
+	<update id="updateYStatus" parameterType="MasterVO">
+		UPDATE MEMBER
+		SET m_status = 'Y'
+		WHERE m_id = #{m_id}
+	</update>
+	
+	<update id="updateNStatus" parameterType="MasterVO">
+		UPDATE MEMBER
+		SET m_status = 'N'
+		WHERE m_id = #{m_id}
+	</update>
+	
+	<select id="faqMemberCheck" parameterType="MasterVO" resultMap="masterResultMap">
+		SELECT * FROM MEMBER
+		WHERE m_id = #{m_id}		
+	</select>
+	
+	<select id="faqCount" resultType="int">
+		SELECT COUNT(*) FROM FAQ
+	</select>
+	
+	<select id="faqList" parameterType="FAQVO" resultMap="faqResultMap">
+		SELECT * FROM FAQ
+	</select>
+	
+	<select id="adminCheck" resultType="int">
+		SELECT COUNT(*) FROM MEMBER
+		WHERE m_id = #{m_id}
+		AND m_password = #{m_password}
+		AND m_type = 'M'
+	</select>
+	
+	<insert id="faqInsert" parameterType="FAQVO">
+		INSERT INTO FAQ(f_sub, f_content, f_date, f_readcount)
+		VALUES (#{f_sub}, #{f_content}, SYSDATE, 0)
+	</insert>
+	
+	<select id="faqDetail" parameterType="FAQVO" resultMap="faqResultMap">
+		SELECT * FROM FAQ
+		WHERE f_num = #{f_num}
+	</select>
+	
+	<update id="faqUpdate" parameterType="FAQVO">
+		UPDATE FAQ
+		SET f_sub = #{f_sub}, f_content = #{f_content}
+		WHERE f_num = #{f_num}
+	</update>
+	
+	<delete id="faqDelete" parameterType="FAQVO">
+		DELETE FROM FAQ
+		WHERE f_num = #{f_num}
+	</delete>
+	
+	<!-- ======================================================================== -->
+	
+	<!-- 호준님 (신고, 매칭) -->
+	<select id="matchCount" resultType="int">
+		SELECT COUNT(*) FROM accept where 1=1
+			<if test="searchFiled != null and searchFiled == 'b_subject'">
+				and  b_num in (select b_num from board where ${searchFiled} like '%'||#{searchValue}||'%')
+	        </if>
+			<if test="searchFiled != null and searchFiled != '' and searchFiled != 'b_subject'">
+	            and ${searchFiled} like '%'||#{searchValue}||'%' 
+	        </if>
+	        <if test='a_applyValue == "Y"'>
+			  and ${a_applyFiled} = #{a_applyValue}
+     		</if>
+     		<if test='a_applyValue == "D"'>
+			  and ${a_applyFiled} = #{a_applyValue}
+     		</if>
+     		<if test='a_applyValue == "N"'>
+			  and ${a_applyFiled} = #{a_applyValue}
+     		</if>
+
+	</select>
+	
+	<select id="matchList" parameterType="MasterVO" resultMap="matchResultMap">
+	    SELECT x.*
+        FROM (SELECT ROWNUM AS RNUM1, AA.*
+            FROM (SELECT a.*,b.b_subject FROM accept a,board b
+           where a.b_num = b.b_num 
+            
+           
+				    <if test="searchFiled != null and searchFiled != ''">
+			             and ${searchFiled} like '%'||#{searchValue}||'%'
+			          </if>
+			          <if test="searchFiled != '' and searchFiled == 'b_subject'">
+			             and b.${searchFiled} like '%'||#{searchValue}||'%'
+			          </if>
+			           <if test='a_applyValue == "Y"'>
+						  and ${a_applyFiled} = #{a_applyValue}
+			     		</if>
+			     		<if test='a_applyValue == "D"'>
+						  and ${a_applyFiled} = #{a_applyValue}
+			     		</if>
+			     		<if test='a_applyValue == "N"'>
+						  and ${a_applyFiled} = #{a_applyValue}
+			     		</if>
+			     		
+
+                  ) AA ) x
+        <![CDATA[           
+        WHERE RNUM1 >= #{startRowNo}
+        AND RNUM1 <= #{endRowNo}
+        ]]>
+	</select>
+	
+	<select id="dangerCount" resultType="int" >
+		SELECT COUNT(*) FROM danger
+				where 1=1
+			<if test="searchFiled != null and searchFiled == 'b_subject'">
+				and  b_num in (select b_num from board where ${searchFiled} like '%'||#{searchValue}||'%')
+	        </if>
+			<if test="searchFiled != null and searchFiled != '' and searchFiled != 'b_subject'">
+	            and ${searchFiled} like '%'||#{searchValue}||'%' 
+	        </if>
+			<if test='d_statusValue == "X"'>
+			  and ${d_statusFiled} = #{d_statusValue}
+     		</if>
+     		<if test='d_statusValue == "D"'>
+			  and ${d_statusFiled} = #{d_statusValue}
+     		</if>
+     		<if test='d_statusValue == "O"'>
+			  and ${d_statusFiled} = #{d_statusValue}
+     		</if>
+     		<if test='d_typeValue == "A"'>
+			  and ${d_typeFiled} = #{d_typeValue}
+     		</if>
+     		<if test='d_typeValue == "B"'>
+			  and ${d_typeFiled} = #{d_typeValue}
+     		</if>
+     		<if test='d_typeValue == "C"'>
+			  and ${d_typeFiled} = #{d_typeValue}
+     		</if>
+     		<if test='d_typeValue == "D"'>
+			  and ${d_typeFiled} = #{d_typeValue}
+     		</if>
+     		<if test='d_typeValue == "E"'>
+			  and ${d_typeFiled} = #{d_typeValue}
+     		</if>
+
+	</select>
+	
+	<select id="dangerList" resultMap="dangerResultMap" parameterType="MasterVO">
+		SELECT A.*FROM (SELECT ROWNUM AS RNUM1, AA.*FROM 
+		(select d.*,b.b_subject,c.c_content,c.b_num as bnum from danger d left outer join board b on b.b_num=d.b_num  
+                                    left outer join comments c on c.c_num=d.c_num
+				<where>
+				<if test='d_statusValue == "X"'>
+				 	  and d.${d_statusFiled} = #{d_statusValue}
+	    		</if>
+	    		<if test='d_statusValue == "D"'>
+			  		  and d.${d_statusFiled} = #{d_statusValue}
+	    		</if>
+	    		<if test='d_statusValue == "O"'>
+			  and d.${d_statusFiled} = #{d_statusValue}
+	    		</if>
+	    		<if test='d_typeValue == "A"'>
+			  and d.${d_typeFiled} = #{d_typeValue}
+	    		</if>
+	    		<if test='d_typeValue == "B"'>
+			  and d.${d_typeFiled} = #{d_typeValue}
+	    		</if>
+	    		<if test='d_typeValue == "C"'>
+			  and d.${d_typeFiled} = #{d_typeValue}
+	    		</if>
+	    		<if test='d_typeValue == "D"'>
+			  and d.${d_typeFiled} = #{d_typeValue}
+	    		</if>
+	    		<if test='d_typeValue == "E"'>
+			  and d.${d_typeFiled} = #{d_typeValue}
+	    		</if>
+	    		<if test="searchFiled != null and searchFiled != ''">
+	    		  and d.${searchFiled} like '%'||#{searchValue}||'%' 
+	    		</if>
+	    		<if test="searchFiled == 'm_id'">
+	    		  and d.${searchFiled} like '%'||#{searchValue}||'%' 
+	    		</if>
+	    		<if test="searchFiled == 'd_date'">
+	    		  and d.${searchFiled} like '%'||#{searchValue}||'%' 
+	    		</if>
+	    		<if test="searchFiled == 'c_id'">
+	    		  and d.${searchFiled} like '%'||#{searchValue}||'%' 
+	    		</if>
+				</where>
+					) AA ) A 
+		<![CDATA[           
+	       WHERE RNUM1 >= #{startRowNo}
+	       AND RNUM1 <= #{endRowNo}
+	       ]]>
+	</select>
+	
+	<update id="dangerOK" parameterType="String">
+		update danger set d_status = 'O', d_s_date= sysdate where  d_num=#{d_num}
+	</update>
+
+	<update id="dangerNO" parameterType="String">
+		update danger set d_status = 'X' , d_s_date= sysdate where d_num=#{d_num}
+	</update>
+	
+	<select id="dStatusDCount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_status = 'D'
+	</select>
+	<select id="dStatusOCount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_status = 'O'
+	</select>
+	<select id="dStatusXCount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_status = 'X'
+	</select>
+	
+	<select id="dangerACount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_type = 'A'
+	</select>
+	<select id="dangerBCount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_type = 'B'
+	</select>
+	<select id="dangerCCount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_type = 'C'
+	</select>
+	<select id="dangerDCount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_type = 'D'
+	</select>
+	<select id="dangerECount" resultType="int">
+		SELECT COUNT(*) FROM danger
+		WHERE d_type = 'E'
+	</select>
+	
+	<select id="acceptDCount" resultType="int">
+		SELECT COUNT(*) FROM accept
+		WHERE a_apply = 'D'
+	</select>
+	<select id="acceptYCount" resultType="int">
+		SELECT COUNT(*) FROM accept
+		WHERE a_apply = 'Y'
+	</select>
+	<select id="acceptNCount" resultType="int">
+		SELECT COUNT(*) FROM accept
+		WHERE a_apply = 'N'
+	</select>
+	
+	<select id="topAddrMatch" parameterType="MasterVO" resultMap="masterResultMap">
+	SELECT * 
+	FROM (SELECT b.b_address_road, CEIL(RATIO_TO_REPORT(COUNT(*)) OVER() * 100) percent
+             FROM board b,accept a where a.b_num = b.b_num and a.a_apply= 'Y'
+             GROUP BY b.b_address_road
+	      ORDER BY b.b_address_road DESC)		  
+	<![CDATA[  
+	WHERE ROWNUM >= 1
+	AND ROWNUM <= 3
+	]]>
+	</select>
+	
+</mapper>

@@ -1,0 +1,114 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+
+<mapper namespace="com.bit.mapper.ReviewMapper">
+
+	<!-- 해당아이디에 달린모든 리뷰정보조회 -->
+ 	<select id="getReviewList" parameterType="String" resultType="com.bit.myakkbird.review.ReviewVO">
+			select * from 
+			(select R.r_num, R.m_id, R.r_id, R.r_content, R.r_date, R.r_star, R.r_up_file, R.r_like, M.m_photo
+			from review R, member M
+			where M.m_id = R.m_id and R.r_id = #{id}
+			order by r_num asc)
+	</select> 
+	
+	<!-- 리뷰 작성 -->
+	<insert id="writeReview" parameterType="com.bit.myakkbird.review.ReviewVO">
+		insert into review(m_id, r_id, r_content, r_date, r_star, r_up_file)
+		 values(#{m_id}, #{r_id}, #{r_content}, #{r_date}, #{r_star}, #{r_up_file})
+	</insert> 
+	
+	<!-- 해당회원의 총 별☆점 평균 구하기 -->
+  	<select id="getAvgStar" parameterType="String" resultType="double">
+		select avg(r_star) from review where r_id=#{id}
+	</select>  
+	
+	<!-- 리뷰 작성한 적 있는 회원인지 확인 -->
+	<select id="hasWritten" parameterType="HashMap" resultType="int">
+		select count(r_num) from review where r_id=#{watched_id} and m_id=#{current_id}
+	</select> 
+	
+	<!-- 특정리뷰(리뷰번호) 정보 조회 -->
+ 	<select id="getReview" parameterType="int" resultType="com.bit.myakkbird.review.ReviewVO">
+		select * from review where r_num = #{r_num}
+	</select> 
+	
+	<!-- 리뷰 수정 -->
+	<update id="modifyReview" parameterType="com.bit.myakkbird.review.ReviewVO">
+		update review set
+		r_content = #{r_content},
+		r_star = #{r_star}
+		where r_num = #{r_num}
+	</update> 
+	
+	<!-- 리뷰 삭제시 자식레코드(liketo) 삭제 -->
+	<delete id="deleteLiketo" parameterType="int">
+		delete from liketo where r_num =#{r_num}
+	</delete>
+	
+	<!-- 리뷰삭제 -->
+	<delete id="deleteReview" parameterType="int">
+		delete from review where r_num = #{r_num}
+	</delete> 
+	
+	<!-- 메인에 뿌려줄 리뷰 최신순으로 최대 9개 불러오기 -->
+	<select id="latestReviews" resultType="ReviewVO">
+		        select * from 
+			(select R.r_num, R.m_id, R.r_id, R.r_content, R.r_date, R.r_star, R.r_up_file, M.m_photo 
+			from member M, review R  
+			where M.m_id = R.r_id
+            AND R.r_num in(20, 37, 73, 950, 1004, 318, 335, 360, 419)
+            order by R.r_star desc)	
+	</select>
+	
+	<!-- 좋아요 테이블에 열 삽입 -->
+	<insert id="likeReview" parameterType="HashMap">
+		insert into liketo(r_num, m_id, l_check)
+		values(#{r_num}, #{m_id}, 1)
+	</insert>
+	
+	<!-- 해당 리뷰에 좋아요 개수 +1 -->
+	<update id="updateR_like" parameterType="int">
+		update review set
+		r_like = r_like +1
+		where r_num = #{r_num}
+	</update> 
+	
+	<!-- 해당 리뷰에 좋아요 눌렀던 사용자인지 체크 
+	(행의 수 리턴 -> null이 아닐경우 좋아요 누른 상태) -->
+	<select id="like_check" parameterType="HashMap" resultType="int">
+		select count(l_check) from liketo
+		where m_id=#{current_id} and r_num=#{r_num}
+	</select>
+	
+	<!-- 좋아요 취소 (liketo에서 해당 데이터 삭제) -->
+	<delete id="unlikeReview" parameterType="HashMap">
+		delete from liketo where r_num=#{r_num} and m_id=#{m_id}
+	</delete>
+	
+	<!-- 좋아요 취소 시 좋아요 개수 -1 -->
+	<update id="updateR_unlike" parameterType="int">
+		update review set
+		r_like = r_like -1
+		where r_num = #{r_num}
+	</update>
+	
+	<!-- 리뷰 평점순 -->
+	<select id="orderbyStar" resultType="ReviewVO">
+			select * from 
+			(select R.r_num, R.m_id, R.r_id, R.r_content, R.r_date, R.r_star, R.r_up_file, R.r_like, M.m_photo
+			from review R, member M
+			where M.m_id = R.m_id and R.r_id = #{id}
+			order by r_star desc, r_num asc)
+	</select> 
+	
+	<!-- 리뷰 좋아요순 -->
+	<select id="orderbyLike" resultType="ReviewVO">
+			select * from 
+			(select R.r_num, R.m_id, R.r_id, R.r_content, R.r_date, R.r_star, R.r_up_file, R.r_like, M.m_photo
+			from review R, member M
+			where M.m_id = R.m_id and R.r_id = #{id}
+			order by r_like desc, r_num asc)
+	</select> 
+
+</mapper>
